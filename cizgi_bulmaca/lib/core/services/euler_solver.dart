@@ -1,0 +1,196 @@
+import 'dart:math';
+
+/// İpucu adım sonucu
+class HintStepResult {
+  final int fromNode;
+  final int toNode;
+  final List<int> rollbackVisitedNodes;
+  final List<List<int>> rollbackDrawnEdges;
+  final bool didRollback;
+  final String message;
+
+  const HintStepResult({
+    required this.fromNode,
+    required this.toNode,
+    required this.rollbackVisitedNodes,
+    required this.rollbackDrawnEdges,
+    required this.didRollback,
+    required this.message,
+  });
+}
+
+/// Çizgi Bulmaca — Euler Yolu Çözücüsü & Akıllı İpucu Motoru
+/// Graf üzerindeki tek çizgi yolunu (Eulerian path/trail) bulur
+/// ve oyuncuya doğru hamleyi üretir.
+class EulerSolver {
+  EulerSolver._();
+
+  /// Verilen düğüm ve kenar listesi için tam bir Euler yolu bulur.
+  /// [currentPath] verilirse o yoldan devam eden bir çözüm arar.
+  /// Çözüm düğüm indekslerinin sırasıdır: [v0, v1, v2, ..., vm].
+  static List<int>? findSolution(
+    int nodeCount,
+    List<List<int>> edges, [
+    List<int>? currentPath,
+  ]) {
+    final adj = List.generate(nodeCount, (_) => <_EdgeNeighbor>[]);
+    final degrees = List<int>.filled(nodeCount, 0);
+
+    for (int idx = 0; idx < edges.length; idx++) {
+      final u = edges[idx][0];
+      final v = edges[idx][1];
+      adj[u].add(_EdgeNeighbor(v, idx));
+      adj[v].add(_EdgeNeighbor(u, idx));
+      degrees[u]++;
+      degrees[v]++;
+    }
+
+    final oddNodes = <int>[];
+    for (int i = 0; i < nodeCount; i++) {
+      if (degrees[i] % 2 != 0) {
+        oddNodes.add(i);
+      }
+    }
+
+    // Euler teoremi: tek dereceli düğüm sayısı 0 veya 2 olmalı
+    if (oddNodes.isNotEmpty && oddNodes.length != 2) {
+      return null;
+    }
+
+    List<int>? dfs(int cur, Set<int> usedEdges, List<int> path) {
+      if (usedEdges.length == edges.length) {
+        return List<int>.from(path);
+      }
+
+      for (final neighbor in adj[cur]) {
+        if (!usedEdges.contains(neighbor.edgeIndex)) {
+          usedEdges.add(neighbor.edgeIndex);
+          path.add(neighbor.targetNode);
+
+          final result = dfs(neighbor.targetNode, usedEdges, path);
+          if (result != null) return result;
+
+          path.removeLast();
+          usedEdges.remove(neighbor.edgeIndex);
+        }
+      }
+      return null;
+    }
+
+    // Henüz başlanmamışsa: tek dereceli düğümlerden (varsa) veya herhangi birinden başla
+    if (currentPath == null || currentPath.isEmpty) {
+      final startCandidates = oddNodes.isNotEmpty
+          ? oddNodes
+          : List.generate(nodeCount, (i) => i);
+
+      for (final start in startCandidates) {
+        final result = dfs(start, <int>{}, [start]);
+        if (result != null) return result;
+      }
+      return null;
+    }
+
+    // Başlanmışsa: currentPath içindeki kenarları doğrula
+    final usedEdges = <int>{};
+    for (int k = 0; k < currentPath.length - 1; k++) {
+      final u = currentPath[k];
+      final v = currentPath[k + 1];
+      int foundIndex = -1;
+      for (int i = 0; i < edges.length; i++) {
+        final eu = edges[i][0];
+        final ev = edges[i][1];
+        if (((eu == u && ev == v) || (eu == v && ev == u)) &&
+            !usedEdges.contains(i)) {
+          foundIndex = i;
+          break;
+        }
+      }
+      if (foundIndex == -1) {
+        return null; // Geçersiz çizim yolu
+      }
+      usedEdges.add(foundIndex);
+    }
+
+    final cur = currentPath.last;
+    return dfs(cur, usedEdges, List<int>.from(currentPath));
+  }
+
+  /// Oyuncunun mevcut tahta durumuna göre bir sonraki ipucu adımını üretir.
+  /// Eğer oyuncu çıkmaz sokakta ise, çözülebilir son noktaya kadar geri alır
+  /// ve oradan doğru adımı çizer.
+  static HintStepResult? getNextHintStep({
+    required int nodeCount,
+    required List<List<int>> edges,
+    required List<int> visitedNodes,
+    required List<List<int>> drawnEdges,
+    required int? activeNode,
+  }) {
+    // 1) Oyuncu henüz hiç başlamadıysa
+    if (visitedNodes.isEmpty || activeNode == null) {
+      final fullSol = findSolution(nodeCount, edges);
+      if (fullSol == null || fullSol.length < 2) return null;
+      return HintStepResult(
+        fromNode: fullSol[0],
+        toNode: fullSol[1],
+        rollbackVisitedNodes: [fullSol[0]],
+        rollbackDrawnEdges: [],
+        didRollback: false,
+        message: 'Başlangıç adımı belirlendi! 💡',
+      );
+    }
+
+    // 2) Oyuncu mevcut yolundan devam edebiliyor mu?
+    final continuation = findSolution(nodeCount, edges, visitedNodes);
+    if (continuation != null && continuation.length > visitedNodes.length) {
+      final nextNode = continuation[visitedNodes.length];
+      return HintStepResult(
+        fromNode: activeNode,
+        toNode: nextNode,
+        rollbackVisitedNodes: visitedNodes,
+        rollbackDrawnEdges: drawnEdges,
+        didRollback: false,
+        message: 'Doğru sonraki adım bağlandı! 💡',
+      );
+    }
+
+    // 3) Çıkmaz sokak! Geçerli bir ön eki bulana kadar geri al
+    for (int k = visitedNodes.length - 1; k >= 1; k--) {
+      final prefix = visitedNodes.sublist(0, k);
+      final candidateSol = findSolution(nodeCount, edges, prefix);
+      if (candidateSol != null && candidateSol.length > k) {
+        final prefixDrawn = drawnEdges.sublist(0, min(k - 1, drawnEdges.length));
+        final nextNode = candidateSol[k];
+        return HintStepResult(
+          fromNode: prefix.last,
+          toNode: nextNode,
+          rollbackVisitedNodes: prefix,
+          rollbackDrawnEdges: prefixDrawn,
+          didRollback: true,
+          message: 'Çıkmaz sokaktaki hamleler geri alındı ve doğru yol çizildi! 💡',
+        );
+      }
+    }
+
+    // 4) Başlangıç noktası da hatalıysa sıfırdan doğru başlangıç yap
+    final freshSol = findSolution(nodeCount, edges);
+    if (freshSol != null && freshSol.length >= 2) {
+      return HintStepResult(
+        fromNode: freshSol[0],
+        toNode: freshSol[1],
+        rollbackVisitedNodes: [freshSol[0]],
+        rollbackDrawnEdges: [],
+        didRollback: true,
+        message: 'Başlangıç noktası düzeltildi ve doğru ilk adım çizildi! 💡',
+      );
+    }
+
+    return null;
+  }
+}
+
+class _EdgeNeighbor {
+  final int targetNode;
+  final int edgeIndex;
+
+  const _EdgeNeighbor(this.targetNode, this.edgeIndex);
+}
