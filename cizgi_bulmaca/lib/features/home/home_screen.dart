@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/game_provider.dart';
 import '../../core/services/level_repository.dart';
 import '../../core/services/settings_provider.dart';
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final isCurrentlyActive = settingsProvider.adsRemoved;
       final newStatus = !isCurrentlyActive;
       settingsProvider.setAdsRemoved(newStatus);
+      final l10n = AppStrings.get(settingsProvider.locale);
 
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,9 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  newStatus
-                      ? '👑 Geliştirici Modu: Premium Aktif Edildi!'
-                      : 'ℹ️ Geliştirici Modu: Premium Kapatıldı (Test Modu)',
+                  newStatus ? l10n.devModeActive : l10n.devModeInactive,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -76,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final gameProvider = context.watch<GameProvider>();
+    final l10n = context.l10n;
     final continueDiff = gameProvider.lastPlayedDifficulty;
     final continueLevel = gameProvider.lastPlayedLevel > 0
         ? gameProvider.lastPlayedLevel
@@ -128,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     behavior: HitTestBehavior.opaque,
                     onTap: _onTitleTapped,
                     child: Text(
-                      AppConstants.appName,
+                      l10n.appName,
                       style: AppTextStyles.headlineSmall.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -141,17 +142,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       IconButton(
                         onPressed: () => context.push('/store'),
                         icon: const Icon(Icons.store_rounded),
-                        tooltip: 'Mağaza',
+                        tooltip: l10n.storeTooltip,
                       ),
                       IconButton(
                         onPressed: () => context.push('/profile'),
                         icon: const Icon(Icons.person_rounded),
-                        tooltip: 'Profil',
+                        tooltip: l10n.profileTooltip,
                       ),
                       IconButton(
                         onPressed: () => context.push('/settings'),
                         icon: const Icon(Icons.settings_rounded),
-                        tooltip: 'Ayarlar',
+                        tooltip: l10n.settingsTooltip,
                       ),
                     ],
                   ),
@@ -175,13 +176,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Zorluk Modları',
+                    l10n.difficultyModes,
                     style: AppTextStyles.headlineSmall.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   Text(
-                    '600+ Seviye',
+                    l10n.totalLevelsCount,
                     style: AppTextStyles.labelMedium.copyWith(
                       color: Theme.of(context)
                           .colorScheme
@@ -268,6 +269,8 @@ class _ContinueHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return GestureDetector(
       onTap: onPlay,
       child: Container(
@@ -306,7 +309,7 @@ class _ContinueHeroCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          'KALDIĞIN YERDEN DEVAM ET',
+                          l10n.continuePlaying,
                           style: AppTextStyles.labelSmall.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -320,7 +323,7 @@ class _ContinueHeroCard extends StatelessWidget {
 
                   // Seviye ve Başlık
                   Text(
-                    'Seviye $levelNumber',
+                    '${l10n.level} $levelNumber',
                     style: AppTextStyles.headlineLarge.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -328,7 +331,7 @@ class _ContinueHeroCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${difficulty.labelTr} • $levelName',
+                    '${difficulty.localized(context)} • $levelName',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontWeight: FontWeight.w500,
@@ -392,6 +395,8 @@ class _DifficultyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -433,7 +438,7 @@ class _DifficultyCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      difficulty.labelTr,
+                      difficulty.localized(context),
                       style: AppTextStyles.headlineSmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -441,7 +446,7 @@ class _DifficultyCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Seviye $unlockedLevel / $levelCount • $completedCount tamamlandı',
+                      l10n.levelProgress(unlockedLevel, levelCount, completedCount),
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 13,
@@ -462,7 +467,7 @@ class _DifficultyCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Harita',
+                      l10n.map,
                       style: AppTextStyles.labelMedium.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -484,3 +489,4 @@ class _DifficultyCard extends StatelessWidget {
     );
   }
 }
+

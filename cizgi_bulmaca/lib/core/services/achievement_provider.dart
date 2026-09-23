@@ -1,22 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'game_provider.dart';
+import 'settings_provider.dart';
 
 /// Çizgi Bulmaca — Başarım Tanımı
 class AchievementDef {
   final String id;
-  final String title;
-  final String subtitle;
+  final String titleTr;
+  final String titleEn;
+  final String subtitleTr;
+  final String subtitleEn;
   final IconData icon;
   final Color color;
 
   const AchievementDef({
     required this.id,
-    required this.title,
-    required this.subtitle,
+    required this.titleTr,
+    required this.titleEn,
+    required this.subtitleTr,
+    required this.subtitleEn,
     required this.icon,
     required this.color,
   });
+
+  // Geriye dönük uyumluluk getter'ları
+  String get title => titleTr;
+  String get subtitle => subtitleTr;
+
+  String localizedTitle(BuildContext context) {
+    final locale = context.watch<SettingsProvider>().locale;
+    return locale == 'en' ? titleEn : titleTr;
+  }
+
+  String localizedSubtitle(BuildContext context) {
+    final locale = context.watch<SettingsProvider>().locale;
+    return locale == 'en' ? subtitleEn : subtitleTr;
+  }
+
+  String localizedTitleFor(String locale) => locale == 'en' ? titleEn : titleTr;
+  String localizedSubtitleFor(String locale) => locale == 'en' ? subtitleEn : subtitleTr;
 }
 
 /// Çizgi Bulmaca — Başarımlar Provider
@@ -46,113 +69,145 @@ class AchievementProvider extends ChangeNotifier {
   static const List<AchievementDef> definitions = [
     AchievementDef(
       id: 'first_step',
-      title: 'İlk Adım',
-      subtitle: 'İlk level\'ı tamamla',
+      titleTr: 'İlk Adım',
+      titleEn: 'First Step',
+      subtitleTr: 'İlk level\'ı tamamla',
+      subtitleEn: 'Complete your first level',
       icon: Icons.play_arrow_rounded,
       color: Color(0xFF3ADEB0),
     ),
     AchievementDef(
       id: 'star_hunter_10',
-      title: 'Yıldız Toplayıcı',
-      subtitle: '10 yıldız topla',
+      titleTr: 'Yıldız Toplayıcı',
+      titleEn: 'Star Collector',
+      subtitleTr: '10 yıldız topla',
+      subtitleEn: 'Collect 10 stars',
       icon: Icons.star_rounded,
       color: Color(0xFFFFC93C),
     ),
     AchievementDef(
       id: 'star_hunter_50',
-      title: 'Yıldız Avcısı',
-      subtitle: '50 yıldız topla',
+      titleTr: 'Yıldız Avcısı',
+      titleEn: 'Star Hunter',
+      subtitleTr: '50 yıldız topla',
+      subtitleEn: 'Collect 50 stars',
       icon: Icons.star_rounded,
       color: Color(0xFFFFC93C),
     ),
     AchievementDef(
       id: 'star_hunter_100',
-      title: 'Yıldız Ustası',
-      subtitle: '100 yıldız topla',
+      titleTr: 'Yıldız Ustası',
+      titleEn: 'Star Master',
+      subtitleTr: '100 yıldız topla',
+      subtitleEn: 'Collect 100 stars',
       icon: Icons.stars_rounded,
       color: Color(0xFFFFC93C),
     ),
     AchievementDef(
       id: 'star_hunter_500',
-      title: 'Yıldız Efsanesi',
-      subtitle: '500 yıldız topla',
+      titleTr: 'Yıldız Efsanesi',
+      titleEn: 'Star Legend',
+      subtitleTr: '500 yıldız topla',
+      subtitleEn: 'Collect 500 stars',
       icon: Icons.auto_awesome_rounded,
       color: Color(0xFFFFC93C),
     ),
     AchievementDef(
       id: 'speed_demon',
-      title: 'Hız Şeytanı',
-      subtitle: 'Bir level\'ı 5 saniyede tamamla',
+      titleTr: 'Hız Şeytanı',
+      titleEn: 'Speed Demon',
+      subtitleTr: 'Bir level\'ı 5 saniyede tamamla',
+      subtitleEn: 'Complete a level in 5 seconds',
       icon: Icons.speed_rounded,
       color: Color(0xFFFF6B35),
     ),
     AchievementDef(
       id: 'easy_master_10',
-      title: 'Kolay Usta',
-      subtitle: 'Kolay modda 10 level tamamla',
+      titleTr: 'Kolay Usta',
+      titleEn: 'Easy Master',
+      subtitleTr: 'Kolay modda 10 level tamamla',
+      subtitleEn: 'Complete 10 levels in Easy mode',
       icon: Icons.sentiment_satisfied_rounded,
       color: Color(0xFF3ADEB0),
     ),
     AchievementDef(
       id: 'easy_master_50',
-      title: 'Kolay Uzman',
-      subtitle: 'Kolay modda 50 level tamamla',
+      titleTr: 'Kolay Uzman',
+      titleEn: 'Easy Expert',
+      subtitleTr: 'Kolay modda 50 level tamamla',
+      subtitleEn: 'Complete 50 levels in Easy mode',
       icon: Icons.sentiment_satisfied_rounded,
       color: Color(0xFF3ADEB0),
     ),
     AchievementDef(
       id: 'medium_master_10',
-      title: 'Orta Usta',
-      subtitle: 'Orta modda 10 level tamamla',
+      titleTr: 'Orta Usta',
+      titleEn: 'Medium Master',
+      subtitleTr: 'Orta modda 10 level tamamla',
+      subtitleEn: 'Complete 10 levels in Medium mode',
       icon: Icons.psychology_rounded,
       color: Color(0xFFFFAA33),
     ),
     AchievementDef(
       id: 'medium_master_50',
-      title: 'Orta Uzman',
-      subtitle: 'Orta modda 50 level tamamla',
+      titleTr: 'Orta Uzman',
+      titleEn: 'Medium Expert',
+      subtitleTr: 'Orta modda 50 level tamamla',
+      subtitleEn: 'Complete 50 levels in Medium mode',
       icon: Icons.psychology_rounded,
       color: Color(0xFFFFAA33),
     ),
     AchievementDef(
       id: 'hard_master_10',
-      title: 'Zor Usta',
-      subtitle: 'Zor modda 10 level tamamla',
+      titleTr: 'Zor Usta',
+      titleEn: 'Hard Master',
+      subtitleTr: 'Zor modda 10 level tamamla',
+      subtitleEn: 'Complete 10 levels in Hard mode',
       icon: Icons.local_fire_department_rounded,
       color: Color(0xFFE040FB),
     ),
     AchievementDef(
       id: 'hard_master_50',
-      title: 'Usta Çözücü',
-      subtitle: 'Zor modda 50 level tamamla',
+      titleTr: 'Usta Çözücü',
+      titleEn: 'Master Solver',
+      subtitleTr: 'Zor modda 50 level tamamla',
+      subtitleEn: 'Complete 50 levels in Hard mode',
       icon: Icons.local_fire_department_rounded,
       color: Color(0xFFE040FB),
     ),
     AchievementDef(
       id: 'marathon_25',
-      title: 'Maraton Koşucusu',
-      subtitle: 'Toplam 25 level tamamla',
+      titleTr: 'Maraton Koşucusu',
+      titleEn: 'Marathon Runner',
+      subtitleTr: 'Toplam 25 level tamamla',
+      subtitleEn: 'Complete 25 levels in total',
       icon: Icons.directions_run_rounded,
       color: Color(0xFF2196F3),
     ),
     AchievementDef(
       id: 'marathon_100',
-      title: 'Maraton Şampiyonu',
-      subtitle: 'Toplam 100 level tamamla',
+      titleTr: 'Maraton Şampiyonu',
+      titleEn: 'Marathon Champion',
+      subtitleTr: 'Toplam 100 level tamamla',
+      subtitleEn: 'Complete 100 levels in total',
       icon: Icons.emoji_events_rounded,
       color: Color(0xFF2196F3),
     ),
     AchievementDef(
       id: 'hint_user',
-      title: 'Akıllı Hamle',
-      subtitle: 'İlk ipucunu kullan',
+      titleTr: 'Akıllı Hamle',
+      titleEn: 'Smart Move',
+      subtitleTr: 'İlk ipucunu kullan',
+      subtitleEn: 'Use your first hint',
       icon: Icons.lightbulb_rounded,
       color: Color(0xFF6C4CF5),
     ),
     AchievementDef(
       id: 'perfect_3',
-      title: 'Mükemmeliyetçi',
-      subtitle: 'Arka arkaya 3 level\'da 3 yıldız al',
+      titleTr: 'Mükemmeliyetçi',
+      titleEn: 'Perfectionist',
+      subtitleTr: 'Arka arkaya 3 level\'da 3 yıldız al',
+      subtitleEn: 'Get 3 stars on 3 consecutive levels',
       icon: Icons.workspace_premium_rounded,
       color: Color(0xFFE91E8C),
     ),

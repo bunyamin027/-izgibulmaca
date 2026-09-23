@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/settings_provider.dart';
 
 /// Çizgi Bulmaca — Onboarding Ekranı
@@ -19,29 +20,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<_OnboardingPage> _pages = const [
+  List<_OnboardingPage> _getPages(AppStrings l10n) => [
     _OnboardingPage(
       icon: Icons.gesture,
-      title: 'Parmağını Kaldırmadan',
-      subtitle: 'Şekli tek çizgiyle tamamla.\nHer düğümden sadece bir kez geç.',
+      title: l10n.onboarding1Title,
+      subtitle: l10n.onboarding1Subtitle,
       gradient: AppColors.primaryGradient,
     ),
     _OnboardingPage(
       icon: Icons.tune,
-      title: 'Sana Uygun Zorluk',
-      subtitle: 'Kolay, Orta veya Zor —\nkendi hızında ilerle.',
+      title: l10n.onboarding2Title,
+      subtitle: l10n.onboarding2Subtitle,
       gradient: AppColors.easyGradient,
     ),
     _OnboardingPage(
       icon: Icons.star_rounded,
-      title: 'Yıldız Kazan, Rekor Kır',
-      subtitle: 'Her seviyede 3 yıldız hedefle.\nİpuçları topla, başarımlar aç.',
+      title: l10n.onboarding3Title,
+      subtitle: l10n.onboarding3Subtitle,
       gradient: AppColors.hardGradient,
     ),
   ];
 
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+  void _nextPage(int totalPages) {
+    if (_currentPage < totalPages - 1) {
       _pageController.nextPage(
         duration: AppConstants.pageTransition,
         curve: Curves.easeInOut,
@@ -64,6 +65,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final pages = _getPages(l10n);
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -76,7 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: TextButton(
                   onPressed: _completeOnboarding,
                   child: Text(
-                    'Geç',
+                    l10n.skip,
                     style: AppTextStyles.labelLarge.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                     ),
@@ -89,12 +93,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
                 },
                 itemBuilder: (context, index) {
-                  final page = _pages[index];
+                  final page = pages[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppConstants.paddingXL,
@@ -161,7 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   // Dot indicator
                   Row(
-                    children: List.generate(_pages.length, (index) {
+                    children: List.generate(pages.length, (index) {
                       final isActive = index == _currentPage;
                       return AnimatedContainer(
                         duration: AppConstants.shortAnimation,
@@ -183,7 +187,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   // İleri butonu
                   ElevatedButton(
-                    onPressed: _nextPage,
+                    onPressed: () => _nextPage(pages.length),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
@@ -191,7 +195,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     child: Text(
-                      _currentPage < _pages.length - 1 ? 'İleri' : 'Başla',
+                      _currentPage < pages.length - 1 ? l10n.next : l10n.start,
                     ),
                   ),
                 ],

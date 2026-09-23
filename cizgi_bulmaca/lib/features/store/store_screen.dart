@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/iap_service.dart';
 
 /// Çizgi Bulmaca — Mağaza / Reklamları Kaldır Ekranı
@@ -23,6 +24,7 @@ class StoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final iapService = context.watch<IapService>();
     final alreadyPurchased = iapService.adsRemoved;
+    final l10n = context.l10n;
 
     // Ürün henüz yüklenmediyse arka planda mağazadan sorgula
     if (!alreadyPurchased && iapService.product == null && !iapService.isPurchasing) {
@@ -33,7 +35,7 @@ class StoreScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mağaza'),
+        title: Text(l10n.store),
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -84,7 +86,7 @@ class StoreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      alreadyPurchased ? 'Premium Aktif!' : 'Reklamları Kaldır',
+                      alreadyPurchased ? l10n.premiumActive : l10n.removeAds,
                       style: AppTextStyles.headlineMedium.copyWith(
                         color: Colors.white,
                       ),
@@ -92,8 +94,8 @@ class StoreScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       alreadyPurchased
-                          ? 'Reklamsız deneyimin aktif. Keyifle oyna!'
-                          : 'Reklamlar olmadan kesintisiz oyna.\nTek seferlik ödeme, süresiz erişim.',
+                          ? l10n.premiumActiveDesc
+                          : l10n.removeAdsDesc,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: Colors.white.withValues(alpha: 0.85),
                       ),
@@ -103,11 +105,11 @@ class StoreScreen extends StatelessWidget {
 
                     if (!alreadyPurchased) ...[
                       // Özellik listesi
-                      const _FeatureRow(icon: Icons.block, text: 'Tüm reklamlar kaldırılır'),
+                      _FeatureRow(icon: Icons.block, text: l10n.allAdsRemoved),
                       const SizedBox(height: 8),
-                      const _FeatureRow(icon: Icons.all_inclusive, text: 'Süresiz erişim'),
+                      _FeatureRow(icon: Icons.all_inclusive, text: l10n.lifetimeAccess),
                       const SizedBox(height: 8),
-                      const _FeatureRow(icon: Icons.devices, text: 'Tüm cihazlarınızda geçerli'),
+                      _FeatureRow(icon: Icons.devices, text: l10n.allDevices),
 
                       const SizedBox(height: 32),
 
@@ -144,7 +146,7 @@ class StoreScreen extends StatelessWidget {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : Text(
-                                  'Satın Al — ${iapService.priceLabel}',
+                                  l10n.buyPrice(iapService.priceLabel),
                                   style: AppTextStyles.labelLarge.copyWith(
                                     color: AppColors.primary,
                                   ),
@@ -153,9 +155,9 @@ class StoreScreen extends StatelessWidget {
                       ),
                     ] else ...[
                       // Zaten satın alınmış durumda
-                      const _FeatureRow(icon: Icons.check, text: 'Reklamlar kaldırıldı ✓'),
+                      _FeatureRow(icon: Icons.check, text: l10n.adsRemovedChecked),
                       const SizedBox(height: 8),
-                      const _FeatureRow(icon: Icons.check, text: 'Süresiz erişim aktif ✓'),
+                      _FeatureRow(icon: Icons.check, text: l10n.lifetimeAccessChecked),
                     ],
                   ],
                 ),
@@ -171,14 +173,14 @@ class StoreScreen extends StatelessWidget {
                       : () {
                           iapService.restorePurchases();
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Satın alımlar kontrol ediliyor...'),
+                            SnackBar(
+                              content: Text(l10n.checkingPurchases),
                             ),
                           );
                         },
                   icon: const Icon(Icons.restore_rounded, size: 20),
                   label: Text(
-                    'Satın Alımları Geri Yükle',
+                    l10n.restorePurchases,
                     style: AppTextStyles.labelMedium.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -195,7 +197,7 @@ class StoreScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () => _launchUrl(AppConstants.privacyPolicyUrl),
                     child: Text(
-                      'Gizlilik Politikası',
+                      l10n.privacyPolicy,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         decoration: TextDecoration.underline,
@@ -214,7 +216,7 @@ class StoreScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () => _launchUrl(AppConstants.termsOfUseUrl),
                     child: Text(
-                      'Kullanım Koşulları (EULA)',
+                      l10n.termsOfUse,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                         decoration: TextDecoration.underline,

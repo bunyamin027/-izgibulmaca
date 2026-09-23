@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/game_provider.dart';
 import '../../core/services/achievement_provider.dart';
 import '../../models/difficulty.dart';
@@ -17,6 +18,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final gameProvider = context.watch<GameProvider>();
     final achievementProvider = context.watch<AchievementProvider>();
+    final l10n = context.l10n;
 
     final totalCompleted = gameProvider.completedLevelsCount(0) +
         gameProvider.completedLevelsCount(1) +
@@ -24,7 +26,7 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profil'),
+        title: Text(l10n.profile),
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -68,14 +70,17 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Oyuncu',
+                  l10n.player,
                   style: AppTextStyles.headlineMedium.copyWith(
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${achievementProvider.unlockedCount} / ${achievementProvider.totalCount} başarım',
+                  l10n.achievementsProgress(
+                    achievementProvider.unlockedCount,
+                    achievementProvider.totalCount,
+                  ),
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.white70,
                   ),
@@ -93,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
                 child: _StatCard(
                   icon: Icons.star_rounded,
                   value: '${gameProvider.totalStars}',
-                  label: 'Toplam Yıldız',
+                  label: l10n.totalStars,
                   color: AppColors.accent,
                 ),
               ),
@@ -102,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                 child: _StatCard(
                   icon: Icons.emoji_events_rounded,
                   value: '${gameProvider.totalScore}',
-                  label: 'Toplam Puan',
+                  label: l10n.totalScore,
                   color: AppColors.secondary,
                 ),
               ),
@@ -111,7 +116,7 @@ class ProfileScreen extends StatelessWidget {
                 child: _StatCard(
                   icon: Icons.check_circle_rounded,
                   value: '$totalCompleted',
-                  label: 'Çözülen',
+                  label: l10n.solved,
                   color: AppColors.primary,
                 ),
               ),
@@ -122,7 +127,7 @@ class ProfileScreen extends StatelessWidget {
 
           // ─── Zorluk İlerlemeleri ───────────────────
           Text(
-            'Zorluk İlerlemesi',
+            l10n.difficultyProgress,
             style: AppTextStyles.headlineSmall,
           ),
           const SizedBox(height: 16),
@@ -158,7 +163,7 @@ class ProfileScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Başarımlar',
+                l10n.achievements,
                 style: AppTextStyles.headlineSmall,
               ),
               Text(
@@ -180,8 +185,8 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 8),
               child: _AchievementTile(
                 icon: def.icon,
-                title: def.title,
-                subtitle: def.subtitle,
+                title: def.localizedTitle(context),
+                subtitle: def.localizedSubtitle(context),
                 isUnlocked: unlocked,
                 color: def.color,
               ),
@@ -243,7 +248,6 @@ class _StatCard extends StatelessWidget {
                   .onSurface
                   .withValues(alpha: 0.6),
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -251,7 +255,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// Zorluk ilerleme satırı
+/// Zorluk modu ilerleme çubuğu
 class _DifficultyProgressRow extends StatelessWidget {
   final Difficulty difficulty;
   final int completed;
@@ -274,8 +278,16 @@ class _DifficultyProgressRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -292,10 +304,8 @@ class _DifficultyProgressRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    difficulty.labelTr,
-                    style: AppTextStyles.titleMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    difficulty.localized(context),
+                    style: AppTextStyles.titleMedium,
                   ),
                 ],
               ),

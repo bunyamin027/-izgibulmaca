@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/settings_provider.dart';
 import '../../core/services/iap_service.dart';
@@ -18,10 +19,11 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final settingsProvider = context.watch<SettingsProvider>();
+    final l10n = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ayarlar'),
+        title: Text(l10n.settings),
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -31,13 +33,13 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(AppConstants.paddingM),
         children: [
           // ─── Görünüm ──────────────────────────────
-          _SectionHeader(title: 'Görünüm'),
+          _SectionHeader(title: l10n.appearance),
           const SizedBox(height: 8),
 
           // Koyu/Açık Mod
           _SettingsTile(
             icon: Icons.dark_mode_rounded,
-            title: 'Koyu Mod',
+            title: l10n.darkMode,
             trailing: Switch.adaptive(
               value: themeProvider.isDarkMode,
               onChanged: (_) => themeProvider.toggleTheme(),
@@ -49,21 +51,43 @@ class SettingsScreen extends StatelessWidget {
           // Tema Rengi
           _SettingsTile(
             icon: Icons.palette_rounded,
-            title: 'Tema Rengi',
+            title: l10n.themeColor,
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-            onTap: () => _showColorPicker(context, themeProvider),
+            onTap: () => _showColorPicker(context, themeProvider, l10n),
           ),
 
           const SizedBox(height: 24),
 
           // ─── Genel ────────────────────────────────
-          _SectionHeader(title: 'Genel'),
+          _SectionHeader(title: l10n.general),
+          const SizedBox(height: 8),
+
+          // Dil Seçimi
+          _SettingsTile(
+            icon: Icons.language_rounded,
+            title: l10n.language,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  settingsProvider.locale == 'en' ? 'English' : 'Türkçe',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+              ],
+            ),
+            onTap: () => _showLanguagePicker(context, settingsProvider, l10n),
+          ),
           const SizedBox(height: 8),
 
           // Ses
           _SettingsTile(
             icon: Icons.volume_up_rounded,
-            title: 'Ses Efektleri',
+            title: l10n.soundEffects,
             trailing: Switch.adaptive(
               value: settingsProvider.soundEnabled,
               onChanged: (v) => settingsProvider.setSoundEnabled(v),
@@ -75,7 +99,7 @@ class SettingsScreen extends StatelessWidget {
           // Titreşim
           _SettingsTile(
             icon: Icons.vibration_rounded,
-            title: 'Titreşim',
+            title: l10n.haptic,
             trailing: Switch.adaptive(
               value: settingsProvider.hapticEnabled,
               onChanged: (v) => settingsProvider.setHapticEnabled(v),
@@ -86,12 +110,12 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ─── Satın Alma ───────────────────────────
-          _SectionHeader(title: 'Satın Alma'),
+          _SectionHeader(title: l10n.purchases),
           const SizedBox(height: 8),
 
           _SettingsTile(
             icon: Icons.remove_circle_outline_rounded,
-            title: 'Reklamları Kaldır',
+            title: l10n.removeAds,
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
             onTap: () => context.push('/store'),
           ),
@@ -99,11 +123,11 @@ class SettingsScreen extends StatelessWidget {
 
           _SettingsTile(
             icon: Icons.restore_rounded,
-            title: 'Satın Alımları Geri Yükle',
+            title: l10n.restorePurchases,
             onTap: () {
               context.read<IapService>().restorePurchases();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Satın alımlar kontrol ediliyor...')),
+                SnackBar(content: Text(l10n.checkingPurchases)),
               );
             },
           ),
@@ -111,46 +135,45 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ─── Hakkında ─────────────────────────────
-          _SectionHeader(title: 'Hakkında'),
+          _SectionHeader(title: l10n.about),
           const SizedBox(height: 8),
 
           _SettingsTile(
             icon: Icons.privacy_tip_rounded,
-            title: 'Gizlilik Politikası',
+            title: l10n.privacyPolicy,
             onTap: () => _launchUrl(AppConstants.privacyPolicyUrl),
           ),
           const SizedBox(height: 8),
 
           _SettingsTile(
             icon: Icons.description_rounded,
-            title: 'Kullanım Koşulları (EULA)',
+            title: l10n.termsOfUse,
             onTap: () => _launchUrl(AppConstants.termsOfUseUrl),
           ),
           const SizedBox(height: 8),
 
           _SettingsTile(
             icon: Icons.mail_outline_rounded,
-            title: 'Destek ve Geri Bildirim',
+            title: l10n.supportAndFeedback,
             trailing: Text(
               AppConstants.supportEmail,
               style: AppTextStyles.bodySmall.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
-            onTap: () => _launchUrl('mailto:${AppConstants.supportEmail}?subject=Cizgi%20Bulmaca%20Destek'),
+            onTap: () => _launchUrl(
+              'mailto:${AppConstants.supportEmail}?subject=${Uri.encodeComponent('${l10n.appName} Destek / Support')}',
+            ),
           ),
           const SizedBox(height: 8),
 
           _SettingsTile(
             icon: Icons.info_outline_rounded,
-            title: 'Versiyon',
+            title: l10n.version,
             trailing: Text(
               '1.0.0',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -171,19 +194,16 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  AppConstants.appName,
+                  l10n.appName,
                   style: AppTextStyles.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '© 2026 Kahramanapp • Tüm Hakları Saklıdır',
+                  '© 2026 Kahramanapp • All Rights Reserved',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.4),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -195,7 +215,68 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showColorPicker(BuildContext context, ThemeProvider provider) {
+  void _showLanguagePicker(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+    AppStrings l10n,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppConstants.borderRadiusLarge),
+        ),
+      ),
+      builder: (ctx) {
+        final currentLocale = settingsProvider.locale;
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.paddingL,
+            vertical: AppConstants.paddingXL,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.selectLanguage,
+                style: AppTextStyles.headlineSmall,
+              ),
+              const SizedBox(height: 20),
+
+              // Türkçe Seçeneği
+              _LanguageOptionTile(
+                flag: '🇹🇷',
+                title: 'Türkçe',
+                subtitle: 'Turkish',
+                isSelected: currentLocale == 'tr',
+                onTap: () {
+                  settingsProvider.setLocale('tr');
+                  Navigator.of(ctx).pop();
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // İngilizce Seçeneği
+              _LanguageOptionTile(
+                flag: '🇬🇧',
+                title: 'English',
+                subtitle: 'İngilizce',
+                isSelected: currentLocale == 'en',
+                onTap: () {
+                  settingsProvider.setLocale('en');
+                  Navigator.of(ctx).pop();
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showColorPicker(BuildContext context, ThemeProvider provider, AppStrings l10n) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -209,7 +290,7 @@ class SettingsScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Tema Rengi Seç', style: AppTextStyles.headlineSmall),
+              Text(l10n.themeColor, style: AppTextStyles.headlineSmall),
               const SizedBox(height: 24),
               Wrap(
                 spacing: 16,
@@ -258,6 +339,71 @@ class SettingsScreen extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+}
+
+class _LanguageOptionTile extends StatelessWidget {
+  final String flag;
+  final String title;
+  final String subtitle;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LanguageOptionTile({
+    required this.flag,
+    required this.title,
+    required this.subtitle,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+          border: Border.all(
+            color: isSelected ? primaryColor : Colors.grey.withValues(alpha: 0.2),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(flag, style: const TextStyle(fontSize: 26)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? primaryColor : null,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle_rounded, color: primaryColor, size: 24),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/game_provider.dart';
 import '../../core/services/settings_provider.dart';
 import '../../core/services/achievement_provider.dart';
@@ -336,6 +337,8 @@ class _GameScreenState extends State<GameScreen>
   }
 
   void _showNoHintsDialog() {
+    final l10n = context.l10n;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -346,17 +349,17 @@ class _GameScreenState extends State<GameScreen>
           children: [
             const Icon(Icons.lightbulb_outline_rounded, color: AppColors.accent, size: 28),
             const SizedBox(width: 8),
-            Text('İpucun Bitti', style: AppTextStyles.headlineSmall),
+            Text(l10n.outOfHintsTitle, style: AppTextStyles.headlineSmall),
           ],
         ),
         content: Text(
-          'Tüm ipuçlarını kullandın! Ücretsiz 3 ipucu kazanarak devam edebilirsin.',
+          l10n.outOfHintsDesc,
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Vazgeç'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
@@ -373,9 +376,9 @@ class _GameScreenState extends State<GameScreen>
                   context.read<GameProvider>().addHints(3);
                   ScaffoldMessenger.of(context).clearSnackBars();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('+3 İpucu hesabına eklendi! 🎉'),
-                      duration: Duration(seconds: 2),
+                    SnackBar(
+                      content: Text(l10n.hintsAdded),
+                      duration: const Duration(seconds: 2),
                     ),
                   );
                   _handleSmartHint();
@@ -383,7 +386,7 @@ class _GameScreenState extends State<GameScreen>
               );
             },
             icon: const Icon(Icons.play_circle_rounded, size: 20),
-            label: const Text('Reklam İzle → +3 İpucu', style: TextStyle(fontWeight: FontWeight.w700)),
+            label: Text(l10n.watchAdReward, style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -392,6 +395,8 @@ class _GameScreenState extends State<GameScreen>
 
   /// Akıllı ipucu analizi ve yönlendirmesi
   void _handleSmartHint() {
+    final l10n = context.l10n;
+
     final hintResult = EulerSolver.getNextHintStep(
       nodeCount: _nodes.length,
       edges: _edges,
@@ -403,8 +408,8 @@ class _GameScreenState extends State<GameScreen>
     if (hintResult == null) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bu seviye için şu an ipucu bulunamadı!'),
+        SnackBar(
+          content: Text(l10n.noHintFound),
         ),
       );
       return;
@@ -440,6 +445,7 @@ class _GameScreenState extends State<GameScreen>
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final l10n = context.l10n;
 
         return Container(
           padding: const EdgeInsets.all(AppConstants.paddingL),
@@ -494,13 +500,13 @@ class _GameScreenState extends State<GameScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Akıllı İpucu Rehberi',
+                            l10n.smartHintTitle,
                             style: AppTextStyles.titleLarge.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           Text(
-                            '$drawnCount / $totalEdges çizgi çizildi',
+                            l10n.smartHintDrawnInfo(drawnCount, totalEdges),
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.secondary,
                               fontWeight: FontWeight.w600,
@@ -536,9 +542,7 @@ class _GameScreenState extends State<GameScreen>
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          isWrongStart
-                              ? 'Bu bulmaca matematiksel olarak yalnızca sarı halkalı başlangıç düğümlerinden başlanarak tek seferde bitirilebilir. Mevcut başlangıç noktanızla tüm çizgileri tamamlamak mümkün değil.'
-                              : 'Çizdiğiniz yol önceki bir ayrımda çıkmaza girdi. Tüm çizgileri tamamlamak için rotanın düzeltilmesi gerekiyor.',
+                          isWrongStart ? l10n.wrongStartDesc : l10n.deadEndDesc,
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontSize: 13,
                             height: 1.4,
@@ -566,9 +570,9 @@ class _GameScreenState extends State<GameScreen>
                     _activateGhostPreview(hintResult);
                   },
                   icon: const Icon(Icons.visibility_rounded, size: 20),
-                  label: const Text(
-                    'Çözüm Yolunu Önizle (Çizimini Korur)',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+                  label: Text(
+                    l10n.previewSolution,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
 
@@ -593,7 +597,7 @@ class _GameScreenState extends State<GameScreen>
                   },
                   icon: const Icon(Icons.fast_forward_rounded, size: 20),
                   label: Text(
-                    'Doğru Rotaya Geç (İlk $autoStepsCount Çizgiyi Tamamla)',
+                    l10n.switchToRoute(autoStepsCount),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
@@ -603,7 +607,7 @@ class _GameScreenState extends State<GameScreen>
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
                   child: Text(
-                    'Vazgeç (İpucu Harcama)',
+                    l10n.cancelHint,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
@@ -639,17 +643,19 @@ class _GameScreenState extends State<GameScreen>
       });
     });
 
+    final l10n = context.l10n;
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.visibility_rounded, color: AppColors.accent, size: 20),
-            SizedBox(width: 10),
+            const Icon(Icons.visibility_rounded, color: AppColors.accent, size: 20),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Tam çözüm yolu 10 sn boyunca numaralı adımlarla gösteriliyor!',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                l10n.previewActiveSnackBar,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -658,7 +664,7 @@ class _GameScreenState extends State<GameScreen>
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
-          label: 'Kapat',
+          label: l10n.close,
           textColor: AppColors.accent,
           onPressed: () {
             _ghostTimer?.cancel();
@@ -724,11 +730,12 @@ class _GameScreenState extends State<GameScreen>
       }
     });
 
+    final l10n = context.l10n;
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Doğru rotaya geçildi ve ilk $validSteps adım çizildi! 🚀',
+          l10n.switchedToRouteSnackBar(validSteps),
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         duration: const Duration(seconds: 3),
@@ -837,7 +844,8 @@ class _GameScreenState extends State<GameScreen>
     // Süre formatı
     final seconds = (_elapsedMs ~/ 1000) % 60;
     final minutes = (_elapsedMs ~/ 1000) ~/ 60;
-    final timeStr = '${minutes > 0 ? '$minutes dk ' : ''}$seconds sn';
+    final l10n = context.l10n;
+    final timeStr = l10n.formatTime(minutes, seconds);
 
     showDialog(
       context: context,
@@ -847,7 +855,7 @@ class _GameScreenState extends State<GameScreen>
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
         ),
         title: Text(
-          'Tebrikler! 🎉',
+          l10n.congratulations,
           style: AppTextStyles.headlineMedium,
           textAlign: TextAlign.center,
         ),
@@ -874,7 +882,7 @@ class _GameScreenState extends State<GameScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Seviye ${widget.levelId} • ${_currentLevel.name}',
+              '${l10n.level} ${widget.levelId} • ${_currentLevel.name}',
               style: AppTextStyles.bodyLarge.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -886,7 +894,7 @@ class _GameScreenState extends State<GameScreen>
                 Icon(Icons.touch_app_rounded, size: 18, color: AppColors.secondary),
                 const SizedBox(width: 4),
                 Text(
-                  '$_moveCount hamle',
+                  '$_moveCount ${l10n.moves}',
                   style: AppTextStyles.titleMedium.copyWith(
                     color: AppColors.secondary,
                   ),
@@ -910,14 +918,14 @@ class _GameScreenState extends State<GameScreen>
               Navigator.of(ctx).pop();
               context.pop();
             },
-            child: const Text('Ana Menü'),
+            child: Text(l10n.mainMenu),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               context.pushReplacement('/game/${widget.levelId + 1}?d=${widget.difficulty}');
             },
-            child: const Text('Devam Et'),
+            child: Text(l10n.continueText),
           ),
         ],
       ),
@@ -934,6 +942,7 @@ class _GameScreenState extends State<GameScreen>
     final achievementProvider = context.read<AchievementProvider>();
     if (!achievementProvider.hasPendingNotifications) return;
 
+    final locale = context.read<SettingsProvider>().locale;
     final pending = achievementProvider.consumePendingNotifications();
     for (final achievement in pending) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -948,11 +957,11 @@ class _GameScreenState extends State<GameScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '🏆 ${achievement.title}',
+                      '🏆 ${achievement.localizedTitleFor(locale)}',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      achievement.subtitle,
+                      achievement.localizedSubtitleFor(locale),
                       style: const TextStyle(fontSize: 12),
                     ),
                   ],
@@ -973,12 +982,14 @@ class _GameScreenState extends State<GameScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Seviye ${widget.levelId}', style: AppTextStyles.titleMedium),
+            Text('${l10n.level} ${widget.levelId}', style: AppTextStyles.titleMedium),
             Text(
               _currentLevel.name,
               style: AppTextStyles.labelSmall.copyWith(
@@ -1040,7 +1051,7 @@ class _GameScreenState extends State<GameScreen>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
-              '${_drawnEdges.length} / ${_edges.length} çizgi',
+              l10n.drawnLinesProgress(_drawnEdges.length, _edges.length),
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Theme.of(context)
                     .colorScheme
@@ -1165,17 +1176,17 @@ class _GameScreenState extends State<GameScreen>
                 children: [
                   _ActionButton(
                     icon: Icons.undo_rounded,
-                    label: 'Geri Al',
+                    label: l10n.undo,
                     onTap: _undoLastMove,
                   ),
                   _ActionButton(
                     icon: Icons.refresh_rounded,
-                    label: 'Sıfırla',
+                    label: l10n.reset,
                     onTap: _resetLevel,
                   ),
                   _ActionButton(
                     icon: Icons.lightbulb_rounded,
-                    label: 'İpucu',
+                    label: l10n.hint,
                     badge: '${context.watch<GameProvider>().hintCount}',
                     onTap: _onHintPressed,
                   ),

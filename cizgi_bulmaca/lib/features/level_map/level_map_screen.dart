@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/game_provider.dart';
 import '../../core/services/level_repository.dart';
 import '../../models/difficulty.dart';
@@ -85,6 +86,7 @@ class _LevelMapScreenState extends State<LevelMapScreen> {
   @override
   Widget build(BuildContext context) {
     final gameProvider = context.watch<GameProvider>();
+    final l10n = context.l10n;
     final completedCount = gameProvider.completedLevelsCount(widget.difficulty);
     final totalLevels = gameProvider.totalLevelsForDifficulty(widget.difficulty);
     final activeLevel = gameProvider.lastUnlockedLevel(widget.difficulty);
@@ -92,7 +94,7 @@ class _LevelMapScreenState extends State<LevelMapScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_difficulty.labelTr),
+        title: Text(_difficulty.localized(context)),
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_ios_rounded),
@@ -216,7 +218,7 @@ class _LevelMapScreenState extends State<LevelMapScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                'AKTİF',
+                                l10n.active,
                                 style: AppTextStyles.labelSmall.copyWith(
                                   color: Colors.black87,
                                   fontSize: 8,
@@ -287,7 +289,7 @@ class _LevelMapScreenState extends State<LevelMapScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Kaldığın Seviye',
+                          l10n.currentLevel,
                           style: AppTextStyles.labelSmall.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -296,7 +298,7 @@ class _LevelMapScreenState extends State<LevelMapScreen> {
                           ),
                         ),
                         Text(
-                          'Seviye $activeLevel • ${activeLevelModel.name}',
+                          '${l10n.level} $activeLevel • ${activeLevelModel.name}',
                           style: AppTextStyles.titleMedium.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -315,9 +317,9 @@ class _LevelMapScreenState extends State<LevelMapScreen> {
                     ),
                     onPressed: () => context.push('/game/$activeLevel?d=${widget.difficulty}'),
                     icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                    label: const Text(
-                      'Oyna',
-                      style: TextStyle(fontWeight: FontWeight.w700),
+                    label: Text(
+                      l10n.play,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],

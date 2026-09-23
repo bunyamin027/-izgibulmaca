@@ -57,11 +57,12 @@ class CizgiBulmacaApp extends StatelessWidget {
               previous ?? IapService(settingsProvider),
         ),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
+      child: Consumer2<ThemeProvider, SettingsProvider>(
+        builder: (context, themeProvider, settingsProvider, child) {
           return MaterialApp.router(
-            title: 'Çizgi Bulmaca',
+            title: settingsProvider.locale == 'en' ? 'Line Puzzle' : 'Çizgi Bulmaca',
             debugShowCheckedModeBanner: false,
+            locale: Locale(settingsProvider.locale),
 
             // Tema
             theme: themeProvider.lightTheme,

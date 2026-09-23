@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/services/settings_provider.dart';
 
 /// Çizgi Bulmaca — Splash Ekranı
@@ -113,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen>
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Text(
-                  AppConstants.appName,
+                  context.l10n.appName,
                   style: AppTextStyles.displayMedium.copyWith(
                     color: Colors.white,
                   ),
@@ -125,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen>
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Text(
-                  'Çiz. Çöz. Kazan.',
+                  context.l10n.slogan,
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: Colors.white70,
                   ),
