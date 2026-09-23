@@ -1,12 +1,17 @@
 import 'dart:math';
 
-/// İpucu adım sonucu
+/// İpucu adım sonucu ve durum analizi
 class HintStepResult {
   final int fromNode;
   final int toNode;
   final List<int> rollbackVisitedNodes;
   final List<List<int>> rollbackDrawnEdges;
   final bool didRollback;
+  final int rollbackCount;
+  final bool isWrongStart;
+  final List<int> validStartNodes;
+  final List<int> fullSolution;        // 0'dan tam Euler yolu düğüm sırası
+  final List<List<int>> upcomingSteps; // Sonraki 1-3 önerilen kenar
   final String message;
 
   const HintStepResult({
@@ -15,15 +20,44 @@ class HintStepResult {
     required this.rollbackVisitedNodes,
     required this.rollbackDrawnEdges,
     required this.didRollback,
+    this.rollbackCount = 0,
+    this.isWrongStart = false,
+    this.validStartNodes = const [],
+    this.fullSolution = const [],
+    this.upcomingSteps = const [],
     required this.message,
   });
+
+  /// Kullanıcının yaptığı hamle sayısı yüksek ve büyük bir geri alma gerekiyor mu?
+  bool get isMajorDeadlock => didRollback && (isWrongStart || rollbackCount >= 3);
 }
 
 /// Çizgi Bulmaca — Euler Yolu Çözücüsü & Akıllı İpucu Motoru
 /// Graf üzerindeki tek çizgi yolunu (Eulerian path/trail) bulur
-/// ve oyuncuya doğru hamleyi üretir.
+/// ve oyuncuya en yardımcı, yıkıcı olmayan doğru hamleyi üretir.
 class EulerSolver {
   EulerSolver._();
+
+  /// Grafın geçerli Euler başlangıç düğümlerini döner.
+  /// Grafın 2 tek dereceli düğümü varsa SADECE o 2 düğümden başlanabilir.
+  /// Tüm düğümler çift dereceli ise herhangi bir düğümden başlanabilir.
+  static List<int> getValidStartNodes(int nodeCount, List<List<int>> edges) {
+    final degrees = List<int>.filled(nodeCount, 0);
+    for (final e in edges) {
+      degrees[e[0]]++;
+      degrees[e[1]]++;
+    }
+    final oddNodes = <int>[];
+    for (int i = 0; i < nodeCount; i++) {
+      if (degrees[i] % 2 != 0) {
+        oddNodes.add(i);
+      }
+    }
+    if (oddNodes.length == 2) {
+      return oddNodes;
+    }
+    return List.generate(nodeCount, (i) => i);
+  }
 
   /// Verilen düğüm ve kenar listesi için tam bir Euler yolu bulur.
   /// [currentPath] verilirse o yoldan devam eden bir çözüm arar.
@@ -115,9 +149,7 @@ class EulerSolver {
     return dfs(cur, usedEdges, List<int>.from(currentPath));
   }
 
-  /// Oyuncunun mevcut tahta durumuna göre bir sonraki ipucu adımını üretir.
-  /// Eğer oyuncu çıkmaz sokakta ise, çözülebilir son noktaya kadar geri alır
-  /// ve oradan doğru adımı çizer.
+  /// Oyuncunun mevcut tahta durumuna göre bir sonraki akıllı ipucu adımını üretir.
   static HintStepResult? getNextHintStep({
     required int nodeCount,
     required List<List<int>> edges,
@@ -125,17 +157,28 @@ class EulerSolver {
     required List<List<int>> drawnEdges,
     required int? activeNode,
   }) {
+    final validStarts = getValidStartNodes(nodeCount, edges);
+    final fullSol = findSolution(nodeCount, edges) ?? <int>[];
+
     // 1) Oyuncu henüz hiç başlamadıysa
     if (visitedNodes.isEmpty || activeNode == null) {
-      final fullSol = findSolution(nodeCount, edges);
-      if (fullSol == null || fullSol.length < 2) return null;
+      if (fullSol.length < 2) return null;
+
+      final upcoming = <List<int>>[];
+      for (int i = 0; i < min(3, fullSol.length - 1); i++) {
+        upcoming.add([fullSol[i], fullSol[i + 1]]);
+      }
+
       return HintStepResult(
         fromNode: fullSol[0],
         toNode: fullSol[1],
         rollbackVisitedNodes: [fullSol[0]],
         rollbackDrawnEdges: [],
         didRollback: false,
-        message: 'Başlangıç adımı belirlendi! 💡',
+        validStartNodes: validStarts,
+        fullSolution: fullSol,
+        upcomingSteps: upcoming,
+        message: 'Başlangıç noktası ve ilk yön belirlendi! 💡',
       );
     }
 
@@ -143,44 +186,84 @@ class EulerSolver {
     final continuation = findSolution(nodeCount, edges, visitedNodes);
     if (continuation != null && continuation.length > visitedNodes.length) {
       final nextNode = continuation[visitedNodes.length];
+      final upcoming = <List<int>>[];
+      for (int i = visitedNodes.length - 1;
+          i < min(visitedNodes.length + 2, continuation.length - 1);
+          i++) {
+        upcoming.add([continuation[i], continuation[i + 1]]);
+      }
+
       return HintStepResult(
         fromNode: activeNode,
         toNode: nextNode,
         rollbackVisitedNodes: visitedNodes,
         rollbackDrawnEdges: drawnEdges,
         didRollback: false,
+        rollbackCount: 0,
+        validStartNodes: validStarts,
+        fullSolution: continuation,
+        upcomingSteps: upcoming,
         message: 'Doğru sonraki adım bağlandı! 💡',
       );
     }
 
-    // 3) Çıkmaz sokak! Geçerli bir ön eki bulana kadar geri al
-    for (int k = visitedNodes.length - 1; k >= 1; k--) {
-      final prefix = visitedNodes.sublist(0, k);
-      final candidateSol = findSolution(nodeCount, edges, prefix);
-      if (candidateSol != null && candidateSol.length > k) {
-        final prefixDrawn = drawnEdges.sublist(0, min(k - 1, drawnEdges.length));
-        final nextNode = candidateSol[k];
-        return HintStepResult(
-          fromNode: prefix.last,
-          toNode: nextNode,
-          rollbackVisitedNodes: prefix,
-          rollbackDrawnEdges: prefixDrawn,
-          didRollback: true,
-          message: 'Çıkmaz sokaktaki hamleler geri alındı ve doğru yol çizildi! 💡',
-        );
+    // 3) Çıkmaz sokak! Başlangıç noktası geçerli mi kontrol et
+    final isWrongStart = !validStarts.contains(visitedNodes.first);
+
+    if (!isWrongStart) {
+      // Başlangıç doğru ama arada bir ayrımda yanlış yola girilmiş:
+      // En uzun geçerli ön-eki bul
+      for (int k = visitedNodes.length - 1; k >= 1; k--) {
+        final prefix = visitedNodes.sublist(0, k);
+        final candidateSol = findSolution(nodeCount, edges, prefix);
+        if (candidateSol != null && candidateSol.length > k) {
+          final prefixDrawn = drawnEdges.sublist(0, min(k - 1, drawnEdges.length));
+          final nextNode = candidateSol[k];
+          final rollbackCount = visitedNodes.length - k;
+
+          final upcoming = <List<int>>[];
+          for (int i = k - 1; i < min(k + 2, candidateSol.length - 1); i++) {
+            upcoming.add([candidateSol[i], candidateSol[i + 1]]);
+          }
+
+          return HintStepResult(
+            fromNode: prefix.last,
+            toNode: nextNode,
+            rollbackVisitedNodes: prefix,
+            rollbackDrawnEdges: prefixDrawn,
+            didRollback: true,
+            rollbackCount: rollbackCount,
+            isWrongStart: false,
+            validStartNodes: validStarts,
+            fullSolution: candidateSol,
+            upcomingSteps: upcoming,
+            message: rollbackCount <= 2
+                ? 'Son $rollbackCount hatalı hamle geri alındı ve doğru yön bağlandı! 💡'
+                : '$rollbackCount hamle önceki çıkmaz sokaktan doğru yola dönüldü! 💡',
+          );
+        }
       }
     }
 
-    // 4) Başlangıç noktası da hatalıysa sıfırdan doğru başlangıç yap
-    final freshSol = findSolution(nodeCount, edges);
-    if (freshSol != null && freshSol.length >= 2) {
+    // 4) Başlangıç noktası hatalı (veya hiçbir ön-ek çözülemiyor)
+    if (fullSol.length >= 2) {
+      final upcoming = <List<int>>[];
+      for (int i = 0; i < min(3, fullSol.length - 1); i++) {
+        upcoming.add([fullSol[i], fullSol[i + 1]]);
+      }
+
       return HintStepResult(
-        fromNode: freshSol[0],
-        toNode: freshSol[1],
-        rollbackVisitedNodes: [freshSol[0]],
+        fromNode: fullSol[0],
+        toNode: fullSol[1],
+        rollbackVisitedNodes: [fullSol[0]],
         rollbackDrawnEdges: [],
         didRollback: true,
-        message: 'Başlangıç noktası düzeltildi ve doğru ilk adım çizildi! 💡',
+        rollbackCount: visitedNodes.length,
+        isWrongStart: true,
+        validStartNodes: validStarts,
+        fullSolution: fullSol,
+        upcomingSteps: upcoming,
+        message: 'Bu bulmaca sadece işaretlenen başlangıç noktasından çözülebilir! 💡',
       );
     }
 

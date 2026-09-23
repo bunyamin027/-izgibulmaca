@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
+import '../../core/services/game_provider.dart';
+import '../../core/services/achievement_provider.dart';
+import '../../models/difficulty.dart';
 
 /// Çizgi Bulmaca — Profil & Başarımlar Ekranı
-/// Toplam puan, yıldızlar, başarım rozetleri.
+/// Toplam puan, yıldızlar, zorluk ilerleme barları ve başarım rozetleri.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final gameProvider = context.watch<GameProvider>();
+    final achievementProvider = context.watch<AchievementProvider>();
+
+    final totalCompleted = gameProvider.completedLevelsCount(0) +
+        gameProvider.completedLevelsCount(1) +
+        gameProvider.completedLevelsCount(2);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
@@ -22,7 +33,7 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppConstants.paddingL),
         children: [
-          // Profil Kartı
+          // ─── Profil Kartı ──────────────────────────
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppConstants.paddingXL),
@@ -62,19 +73,26 @@ class ProfileScreen extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  '${achievementProvider.unlockedCount} / ${achievementProvider.totalCount} başarım',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Colors.white70,
+                  ),
+                ),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // İstatistikler
+          // ─── İstatistikler ─────────────────────────
           Row(
             children: [
               Expanded(
                 child: _StatCard(
                   icon: Icons.star_rounded,
-                  value: '0',
+                  value: '${gameProvider.totalStars}',
                   label: 'Toplam Yıldız',
                   color: AppColors.accent,
                 ),
@@ -83,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   icon: Icons.emoji_events_rounded,
-                  value: '0',
+                  value: '${gameProvider.totalScore}',
                   label: 'Toplam Puan',
                   color: AppColors.secondary,
                 ),
@@ -92,7 +110,7 @@ class ProfileScreen extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   icon: Icons.check_circle_rounded,
-                  value: '0',
+                  value: '$totalCompleted',
                   label: 'Çözülen',
                   color: AppColors.primary,
                 ),
@@ -100,49 +118,84 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
-          // Başarımlar Başlığı
+          // ─── Zorluk İlerlemeleri ───────────────────
           Text(
-            'Başarımlar',
+            'Zorluk İlerlemesi',
             style: AppTextStyles.headlineSmall,
           ),
           const SizedBox(height: 16),
 
-          // Başarım rozetleri (placeholder)
-          _AchievementTile(
-            icon: Icons.play_arrow_rounded,
-            title: 'İlk Adım',
-            subtitle: 'İlk level\'ı tamamla',
-            isUnlocked: false,
+          _DifficultyProgressRow(
+            difficulty: Difficulty.easy,
+            completed: gameProvider.completedLevelsCount(0),
+            total: gameProvider.totalLevelsForDifficulty(0),
+            progress: gameProvider.progressForDifficulty(0),
+            color: AppColors.difficultyEasy,
           ),
-          const SizedBox(height: 8),
-          _AchievementTile(
-            icon: Icons.star_rounded,
-            title: 'Yıldız Avcısı',
-            subtitle: '50 yıldız topla',
-            isUnlocked: false,
+          const SizedBox(height: 12),
+          _DifficultyProgressRow(
+            difficulty: Difficulty.medium,
+            completed: gameProvider.completedLevelsCount(1),
+            total: gameProvider.totalLevelsForDifficulty(1),
+            progress: gameProvider.progressForDifficulty(1),
+            color: AppColors.difficultyMedium,
           ),
-          const SizedBox(height: 8),
-          _AchievementTile(
-            icon: Icons.speed_rounded,
-            title: 'Hız Şeytanı',
-            subtitle: 'Bir level\'ı 5 saniyede tamamla',
-            isUnlocked: false,
+          const SizedBox(height: 12),
+          _DifficultyProgressRow(
+            difficulty: Difficulty.hard,
+            completed: gameProvider.completedLevelsCount(2),
+            total: gameProvider.totalLevelsForDifficulty(2),
+            progress: gameProvider.progressForDifficulty(2),
+            color: AppColors.difficultyHard,
           ),
-          const SizedBox(height: 8),
-          _AchievementTile(
-            icon: Icons.workspace_premium_rounded,
-            title: 'Usta Çözücü',
-            subtitle: 'Zor modda 50 level tamamla',
-            isUnlocked: false,
+
+          const SizedBox(height: 28),
+
+          // ─── Başarımlar ────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Başarımlar',
+                style: AppTextStyles.headlineSmall,
+              ),
+              Text(
+                '${achievementProvider.unlockedCount} / ${achievementProvider.totalCount}',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+
+          ...AchievementProvider.definitions.map((def) {
+            final unlocked = achievementProvider.isUnlocked(def.id);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _AchievementTile(
+                icon: def.icon,
+                title: def.title,
+                subtitle: def.subtitle,
+                isUnlocked: unlocked,
+                color: def.color,
+              ),
+            );
+          }),
+
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 }
 
+/// İstatistik kartı widget'ı
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -198,17 +251,93 @@ class _StatCard extends StatelessWidget {
   }
 }
 
+/// Zorluk ilerleme satırı
+class _DifficultyProgressRow extends StatelessWidget {
+  final Difficulty difficulty;
+  final int completed;
+  final int total;
+  final double progress;
+  final Color color;
+
+  const _DifficultyProgressRow({
+    required this.difficulty,
+    required this.completed,
+    required this.total,
+    required this.progress,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.paddingM),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    difficulty.labelTr,
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '$completed / $total',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: color.withValues(alpha: 0.12),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Başarım rozet kartı
 class _AchievementTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final bool isUnlocked;
+  final Color color;
 
   const _AchievementTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.isUnlocked,
+    required this.color,
   });
 
   @override
@@ -219,7 +348,7 @@ class _AchievementTile extends StatelessWidget {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
         border: isUnlocked
-            ? Border.all(color: AppColors.secondary, width: 1.5)
+            ? Border.all(color: color.withValues(alpha: 0.5), width: 1.5)
             : null,
       ),
       child: Row(
@@ -229,7 +358,7 @@ class _AchievementTile extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: isUnlocked
-                  ? AppColors.secondary.withValues(alpha: 0.15)
+                  ? color.withValues(alpha: 0.15)
                   : Theme.of(context)
                       .colorScheme
                       .onSurface
@@ -241,7 +370,7 @@ class _AchievementTile extends StatelessWidget {
             child: Icon(
               icon,
               color: isUnlocked
-                  ? AppColors.secondary
+                  ? color
                   : Theme.of(context)
                       .colorScheme
                       .onSurface
@@ -256,10 +385,12 @@ class _AchievementTile extends StatelessWidget {
                 Text(
                   title,
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: isUnlocked ? null : Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.5),
+                    color: isUnlocked
+                        ? null
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.5),
                   ),
                 ),
                 Text(
@@ -275,7 +406,7 @@ class _AchievementTile extends StatelessWidget {
             ),
           ),
           if (isUnlocked)
-            const Icon(Icons.check_circle, color: AppColors.secondary),
+            Icon(Icons.check_circle, color: color),
         ],
       ),
     );

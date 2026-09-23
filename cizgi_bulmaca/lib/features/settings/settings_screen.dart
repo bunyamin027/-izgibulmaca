@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/settings_provider.dart';
+import '../../core/services/iap_service.dart';
 
 /// Çizgi Bulmaca — Ayarlar Ekranı
 /// Tema rengi seçici, koyu/açık mod, dil, ses/haptic, Gizlilik/Koşullar linkleri.
@@ -100,7 +101,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.restore_rounded,
             title: 'Satın Alımları Geri Yükle',
             onTap: () {
-              // TODO: Restore Purchases
+              context.read<IapService>().restorePurchases();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Satın alımlar kontrol ediliyor...')),
               );
@@ -122,8 +123,21 @@ class SettingsScreen extends StatelessWidget {
 
           _SettingsTile(
             icon: Icons.description_rounded,
-            title: 'Kullanım Koşulları',
+            title: 'Kullanım Koşulları (EULA)',
             onTap: () => _launchUrl(AppConstants.termsOfUseUrl),
+          ),
+          const SizedBox(height: 8),
+
+          _SettingsTile(
+            icon: Icons.mail_outline_rounded,
+            title: 'Destek ve Geri Bildirim',
+            trailing: Text(
+              AppConstants.supportEmail,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            onTap: () => _launchUrl('mailto:${AppConstants.supportEmail}?subject=Cizgi%20Bulmaca%20Destek'),
           ),
           const SizedBox(height: 8),
 
@@ -141,7 +155,41 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+
+          // Logo & Telif
+          Center(
+            child: Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.asset(
+                    'assets/images/app_icon.png',
+                    width: 44,
+                    height: 44,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppConstants.appName,
+                  style: AppTextStyles.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '© 2026 Kahramanapp • Tüm Hakları Saklıdır',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

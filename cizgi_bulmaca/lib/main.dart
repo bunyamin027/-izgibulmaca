@@ -4,10 +4,13 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/settings_provider.dart';
 import 'core/services/game_provider.dart';
+import 'core/services/achievement_provider.dart';
+import 'core/services/ad_service.dart';
+import 'core/services/iap_service.dart';
 import 'core/utils/app_router.dart';
 
 /// Çizgi Bulmaca — Ana Giriş Noktası
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Dikey yönlendirmeyi zorunlu kıl (bulmaca oyunu için ideal)
@@ -25,6 +28,9 @@ void main() {
     ),
   );
 
+  // AdMob SDK'yı başlat
+  await AdService.instance.initialize();
+
   runApp(const CizgiBulmacaApp());
 }
 
@@ -38,6 +44,18 @@ class CizgiBulmacaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => GameProvider()),
+        // AchievementProvider GameProvider'a bağımlı
+        ChangeNotifierProxyProvider<GameProvider, AchievementProvider>(
+          create: (ctx) => AchievementProvider(ctx.read<GameProvider>()),
+          update: (ctx, gameProvider, previous) =>
+              previous ?? AchievementProvider(gameProvider),
+        ),
+        // IapService SettingsProvider'a bağımlı
+        ChangeNotifierProxyProvider<SettingsProvider, IapService>(
+          create: (ctx) => IapService(ctx.read<SettingsProvider>()),
+          update: (ctx, settingsProvider, previous) =>
+              previous ?? IapService(settingsProvider),
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

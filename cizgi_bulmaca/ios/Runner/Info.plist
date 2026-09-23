@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Cizgi Bulmaca</string>
+	<string>Çizgi Bulmaca</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -66,8 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Google AdMob Uygulama Kimliği -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-6930876126004356~7477067667</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Size daha uygun ve kaliteli reklamlar sunabilmemiz için izin gereklidir.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

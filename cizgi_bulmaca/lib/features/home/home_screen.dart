@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -6,12 +7,71 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/services/game_provider.dart';
 import '../../core/services/level_repository.dart';
+import '../../core/services/settings_provider.dart';
 import '../../models/difficulty.dart';
 
 /// Çizgi Bulmaca — Ana Sayfa / Mod Seçim Ekranı
 /// Kaldığın Yerden Devam Et hero kartı + Kolay, Orta, Zor mod kartları.
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _titleTapCount = 0;
+  DateTime? _lastTitleTapTime;
+
+  void _onTitleTapped() {
+    final now = DateTime.now();
+    if (_lastTitleTapTime == null ||
+        now.difference(_lastTitleTapTime!) > const Duration(seconds: 2)) {
+      _titleTapCount = 1;
+    } else {
+      _titleTapCount++;
+    }
+    _lastTitleTapTime = now;
+
+    if (_titleTapCount >= 8) {
+      _titleTapCount = 0;
+      HapticFeedback.heavyImpact();
+      final settingsProvider = context.read<SettingsProvider>();
+      final isCurrentlyActive = settingsProvider.adsRemoved;
+      final newStatus = !isCurrentlyActive;
+      settingsProvider.setAdsRemoved(newStatus);
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                newStatus ? Icons.workspace_premium_rounded : Icons.info_outline_rounded,
+                color: newStatus ? AppColors.accent : Colors.white,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  newStatus
+                      ? '👑 Geliştirici Modu: Premium Aktif Edildi!'
+                      : 'ℹ️ Geliştirici Modu: Premium Kapatıldı (Test Modu)',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: newStatus ? const Color(0xFF221F38) : Colors.grey[800],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,17 +123,26 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // Başlık
-                  Text(
-                    AppConstants.appName,
-                    style: AppTextStyles.headlineSmall.copyWith(
-                      fontWeight: FontWeight.w800,
+                  // Başlık (8 kere tıklanınca Premium açar)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _onTitleTapped,
+                    child: Text(
+                      AppConstants.appName,
+                      style: AppTextStyles.headlineSmall.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
 
                   // Menü butonları
                   Row(
                     children: [
+                      IconButton(
+                        onPressed: () => context.push('/store'),
+                        icon: const Icon(Icons.store_rounded),
+                        tooltip: 'Mağaza',
+                      ),
                       IconButton(
                         onPressed: () => context.push('/profile'),
                         icon: const Icon(Icons.person_rounded),

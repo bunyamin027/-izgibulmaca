@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
+import 'ad_service.dart';
 
 /// Çizgi Bulmaca — Uygulama Ayarları Provider
 /// Ses, haptic, dil, onboarding durumu gibi genel ayarları yönetir.
@@ -53,6 +54,7 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setAdsRemoved(bool value) async {
     _adsRemoved = value;
+    AdService.instance.setAdsRemoved(value);
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.keyAdsRemoved, value);
@@ -67,6 +69,10 @@ class SettingsProvider extends ChangeNotifier {
     _locale = prefs.getString(AppConstants.keyLocale) ?? 'tr';
     _onboardingCompleted = prefs.getBool(AppConstants.keyOnboardingCompleted) ?? false;
     _adsRemoved = prefs.getBool(AppConstants.keyAdsRemoved) ?? false;
+
+    if (_adsRemoved) {
+      AdService.instance.setAdsRemoved(true);
+    }
 
     notifyListeners();
   }
